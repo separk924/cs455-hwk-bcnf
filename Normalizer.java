@@ -17,64 +17,75 @@ public class Normalizer {
    * @return a set of relations (as attribute sets) that are in BCNF
    */
   public static Set<Set<String>> BCNFDecompose(Set<String> rel, FDSet fdset) {
+    // make copy of the relational schema
+    Set<String> relationCopy = new HashSet<>(rel);
+    // make a copy of the fdset
+    FDSet fdsetCopy = new FDSet(fdset);
+    // find all the superkeys
+    Set<Set<String>> allSuperkeys = findSuperkeys(relationCopy, fdset);
+
     // First test if the given relation is already in BCNF with respect to
     // the provided FD set.
-    Set<String> relationCopy = new HashSet<>(rel);
-    FDSet fdsetCopy = new FDSet(fdset);
-    Set<Set<String>> allSuperkeys = findSuperkeys(relationCopy, fdset);
     if (isBCNF(relationCopy, fdset)) {
       return allSuperkeys;
     }
+    System.out.println("Current schema = " + relationCopy);
+    System.out.println("Current schema's superkeys = " + allSuperkeys);
 
     // Identify a nontrivial FD that violates BCNF. Split the relation's
-    // attributes using that FD, as seen in class.
-    FD theFD = new FD();
+    // attributes using that FD
     for (FD fd : fdset) {
       if (!fd.isTrivial() && !allSuperkeys.contains(fd.getLeft())) {
-        theFD = fd;
-        break;
-      }
-    }
-    // split the relation on the violating FD
-    Set<String> leftSchema = new HashSet<>();
-    leftSchema.addAll(theFD.getLeft());
-    leftSchema.addAll(theFD.getRight());
-    Set<String> rightSchema = new HashSet<>();
-    rightSchema.addAll(theFD.getLeft());
-    Set<String> intoRight = relationCopy;
-    // remove everything in the right side of the FD from the relation
-    for (String attribute : theFD.getRight()) {
-      intoRight.remove(attribute);
-    }
-    rightSchema.addAll(intoRight);
+        // split the relation on the violating FD
+        Set<String> leftSchema = new HashSet<>();
+        System.out.println("*** Splitting on " + fd.getLeft() + " --> " + fd.getRight() + " ***");
+        leftSchema.addAll(fd.getLeft());
+        leftSchema.addAll(fd.getRight());
+        System.out.println("Left Schema = " + leftSchema);
 
-    // redistribute dependencies into F+ onto left schema & right schema
-    FDSet fdSetClosure = FDUtil.fdSetClosure(fdsetCopy);
-    FDSet closureLeft = new FDSet();
-    FDSet closureRight = new FDSet();
-    // Iterate through closure of the given set of FDs
-    for (FD fd : fdSetClosure) {
-      // union attributes in the fd
-      Set<String> allAttr = new HashSet<>();
-      allAttr.addAll(fd.getLeft());
-      allAttr.addAll(fd.getRight());
-      // if it is a subset of the left schema, add to the left fdset
-      if (leftSchema.containsAll(allAttr)) {
-        closureLeft.add(fd);
-      }
-      // if it is a subset of the right schema, add to the right fdset
-      if (rightSchema.containsAll(allAttr)) {
-        closureRight.add(fd);
-      }
-      // decompose the two relations recursively & return the union of their
-      // decompositions
-      Set<Set<String>> decomp = BCNFDecompose(leftSchema, closureLeft);
-      decomp.addAll(BCNFDecompose(rightSchema, closureRight));
-      return decomp;
-    }
+        Set<String> rightSchema = new HashSet<>();
+        rightSchema.addAll(fd.getLeft());
+        Set<String> intoRight = relationCopy;
+        // remove everything in the right side of the FD from the relation
+        for (String attribute : fd.getRight()) {
+          intoRight.remove(attribute);
+        }
+        rightSchema.addAll(intoRight);
+        System.out.println("Right Schema = " + rightSchema);
 
-    // Repeat the above until all relations are in BCNF
-    return null;
+        // redistribute dependencies into F+ onto left schema & right schema
+        FDSet fdSetClosure = FDUtil.fdSetClosure(fdsetCopy);
+        FDSet closureLeft = new FDSet();
+        FDSet closureRight = new FDSet();
+        // Iterate through closure of the given set of FDs
+        for (FD func : fdSetClosure) {
+          // union attributes in the fd
+          Set<String> allAttr = new HashSet<>();
+          allAttr.addAll(func.getLeft());
+          allAttr.addAll(func.getRight());
+          // if it is a subset of the left schema, add to the left fdset
+          if (leftSchema.containsAll(allAttr)) {
+            closureLeft.add(func);
+          }
+          // if it is a subset of the right schema, add to the right fdset
+          if (rightSchema.containsAll(allAttr)) {
+            closureRight.add(func);
+          }
+        }
+        Set<Set<String>> lSuper = findSuperkeys(leftSchema, closureLeft);
+        Set<Set<String>> rSuper = findSuperkeys(rightSchema, closureRight);
+        System.out.println("Left Schema's superkeys = " + lSuper);
+        System.out.println("Right Schema's superkeys = " + rSuper);
+        // decompose the two relations recursively & return the union of their
+        // decompositions
+        Set<Set<String>> decomp = BCNFDecompose(rightSchema, closureRight);
+        decomp.addAll(BCNFDecompose(leftSchema, closureLeft));
+        return decomp;
+      }
+    }
+    Set<Set<String>> outside = new HashSet<>();
+    outside.add(rel);
+    return outside;
   }
 
   /**
