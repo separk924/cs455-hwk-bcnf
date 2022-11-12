@@ -27,7 +27,9 @@ public class Normalizer {
     // First test if the given relation is already in BCNF with respect to
     // the provided FD set.
     if (isBCNF(relationCopy, fdset)) {
-      return allSuperkeys;
+      Set<Set<String>> output = new HashSet<>();
+      output.add(rel);
+      return output;
     }
     System.out.println("Current schema = " + relationCopy);
     System.out.println("Current schema's superkeys = " + allSuperkeys);
@@ -78,8 +80,8 @@ public class Normalizer {
         System.out.println("Right Schema's superkeys = " + rSuper);
         // decompose the two relations recursively & return the union of their
         // decompositions
-        Set<Set<String>> decomp = BCNFDecompose(rightSchema, closureRight);
-        decomp.addAll(BCNFDecompose(leftSchema, closureLeft));
+        Set<Set<String>> decomp = BCNFDecompose(leftSchema, closureLeft);
+        decomp.addAll(BCNFDecompose(rightSchema, closureRight));
         return decomp;
       }
     }

@@ -12,7 +12,10 @@ public class Main {
     FD f2 = new FD(Arrays.asList("A", "B"), Arrays.asList("C")); // AB --> C
     FD f3 = new FD(Arrays.asList("D"), Arrays.asList("B")); // D --> B
     FDSet fdsetU = new FDSet(f1, f2, f3);
-    System.out.println("Final BCNF Schemas: " + Normalizer.BCNFDecompose(U, fdsetU));
+    System.out.println("BCNF START");
+    System.out.println("Final BCNF Schemas: " + Normalizer.BCNFDecompose(U,
+        fdsetU));
+    System.out.println("BCNF END");
 
     // R(A,B,C)
     Set<String> R = new HashSet<>(Arrays.asList("A", "B", "C"));
@@ -21,6 +24,9 @@ public class Main {
     FD g3 = new FD(Arrays.asList("A"), Arrays.asList("B")); // A --> B
     FD g4 = new FD(Arrays.asList("A", "B"), Arrays.asList("C")); // AB --> C
     FDSet fdsetR = new FDSet(g1, g2, g3, g4);
-    System.out.println("Final BCNF Schemas: " + Normalizer.BCNFDecompose(R, fdsetR));
+    System.out.println("BCNF START");
+    System.out.println("Final BCNF Schemas: " + Normalizer.BCNFDecompose(R,
+        fdsetR));
+    System.out.println("BCNF END");
   }
 }
